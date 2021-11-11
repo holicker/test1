@@ -6,7 +6,11 @@ services:
     mem_limit: 350m
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-    volumes: ./image:/image
+    volumes:
+      - ./image:/image
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   front:
     build: front
@@ -20,6 +24,8 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
+      mysql:
+        condition: service_healthy
       kafka:
         condition: service_started
 
@@ -28,18 +34,27 @@ services:
     mem_limit: 350m
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   notice:
     build: notice
     mem_limit: 350m
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   review:
     build: review
     mem_limit: 350m
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mysql:
+        condition: service_healthy
 
 
   eureka:
@@ -59,6 +74,28 @@ services:
     mem_limit: 350m
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:5.7
+    mem_limit: 350m
+    ports:
+      - "3307:3307"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpwd
+      - MYSQL_DATABASE=spreadmat
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pwd
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: "/usr/bin/mysql --user=user --password=pwd --execute \"SHOW DATABASES;\""
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   kafka:
     image: wurstmeister/kafka:2.12-2.1.0
